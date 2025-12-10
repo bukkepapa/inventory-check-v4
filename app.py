@@ -18,16 +18,24 @@ def load_inventory_file(file):
         file_ext = file.name.split('.')[-1].lower()
         
         if file_ext == 'csv':
-            # CSV形式で読み込み（ヘッダーは4行目）
-            df = pd.read_csv(file, header=3, usecols=[2, 4])
+            # CSV形式で読み込み（ヘッダーなし、B列=1(保管場所), I列=8(品目コード), N列=13(在庫数)）
+            # WindowsのCSVはCP932(Shift_JIS拡張)が多い
+            df = pd.read_csv(file, header=None, usecols=[1, 8, 13], encoding='cp932')
+            # 列名を設定
+            df.columns = ['保管場所', '商品コード', '倉庫在庫数']
+            
+            # 保管場所が 'A309001' のデータのみ抽出
+            df = df[df['保管場所'] == 'A309001']
+            
         elif file_ext in ['xlsx', 'xls']:
-            # Excel形式で読み込み（ヘッダーは4行目）
-            df = pd.read_excel(file, header=3, usecols=[2, 4])
+            # Excel形式の場合も同様の構造（B, I, N列）と仮定、ただしヘッダーがあるか不明なため
+            # ユーザー指示のCSV構造に合わせる形で実装（既存のExcelロジックはコメントアウトまたは置換）
+            # 今回はCSVが添付されているためCSVロジックをExcelにも適用（ヘッダーなしと仮定するか、ヘッダーありと仮定するかリスクだが一旦ヘッダーなしで読む）
+            df = pd.read_excel(file, header=None, usecols=[1, 8, 13])
+            df.columns = ['保管場所', '商品コード', '倉庫在庫数']
+            df = df[df['保管場所'] == 'A309001']
         else:
             raise ValueError(f"サポートされていないファイル形式です: {file_ext}")
-        
-        # 列名を設定（C列=商品コード、E列=倉庫在庫数）
-        df.columns = ['商品コード', '倉庫在庫数']
         
         # 倉庫在庫数を整数型に変換（変換失敗時は0）
         df['倉庫在庫数'] = pd.to_numeric(df['倉庫在庫数'], errors='coerce').fillna(0).astype(int)
@@ -36,12 +44,11 @@ def load_inventory_file(file):
         df = df.dropna(subset=['商品コード'])
         
         # 商品コードを文字列型に変換（マージ時のデータ型一致のため）
-        df['商品コード'] = df['商品コード'].astype(str)
+        # 先頭のゼロを削除して正規化（マッピング不一致防止）
+        df['商品コード'] = df['商品コード'].astype(str).str.lstrip('0')
         
-        # 商品コード30126を除外（システム仕様）
-        df = df[df['商品コード'] != '30126']
-        
-        return df
+        # 不要な保管場所列を削除し、必要な列だけ返す
+        return df[['商品コード', '倉庫在庫数']]
     
     except Exception as e:
         raise Exception(f"倉庫在庫ファイルの読み込みエラー: {str(e)}")
@@ -78,7 +85,8 @@ def load_order_file(file):
         df = df.dropna(subset=['商品コード'])
         
         # 商品コードを文字列型に変換（マージ時のデータ型一致のため）
-        df['商品コード'] = df['商品コード'].astype(str)
+        # 先頭のゼロを削除して正規化
+        df['商品コード'] = df['商品コード'].astype(str).str.lstrip('0')
         
         # 商品コード30126を除外（システム仕様）
         df = df[df['商品コード'] != '30126']
