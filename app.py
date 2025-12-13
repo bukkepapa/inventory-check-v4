@@ -154,8 +154,161 @@ def display_results(allocation_df, order_df):
     shortage_df = allocation_df[allocation_df['引当後在庫'] < 0].copy()
     
     if shortage_df.empty:
-        # 全商品在庫アリ
-        st.success("✅ 全商品在庫アリ")
+        # 全商品在庫アリ - かっこいいアニメーション付き
+        
+        # 紙吹雪アニメーションとスタイリングのCSS/JavaScript
+        success_animation = """
+        <style>
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4), 0 0 40px rgba(34, 197, 94, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(34, 197, 94, 0.6), 0 0 80px rgba(34, 197, 94, 0.4); }
+        }
+        
+        @keyframes shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+        
+        @keyframes bounce-in {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            animation: confetti-fall 4s ease-in-out forwards;
+        }
+        
+        .success-container {
+            background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            animation: bounce-in 0.6s ease-out, pulse-glow 2s ease-in-out infinite;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .success-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shine 3s infinite;
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            animation: float 2s ease-in-out infinite;
+            display: block;
+            margin-bottom: 20px;
+        }
+        
+        .success-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #fff, #a7f3d0, #fff);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: shine 2s linear infinite;
+        }
+        
+        .success-message {
+            font-size: 22px;
+            color: #d1fae5;
+            font-weight: 600;
+            padding: 15px 30px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 30px;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            margin-top: 10px;
+        }
+        
+        .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: float 1.5s ease-in-out infinite;
+        }
+        </style>
+        
+        <div class="confetti-container" id="confetti-container"></div>
+        
+        <div class="success-container">
+            <span class="sparkle" style="top: 20%; left: 10%;"></span>
+            <span class="sparkle" style="top: 30%; right: 15%; animation-delay: 0.5s;"></span>
+            <span class="sparkle" style="bottom: 25%; left: 20%; animation-delay: 1s;"></span>
+            <span class="sparkle" style="bottom: 20%; right: 10%; animation-delay: 1.5s;"></span>
+            <span class="success-icon">🎉</span>
+            <div class="success-title">✅ 全商品在庫アリ</div>
+            <div class="success-message">📄 伝票印字・データ送信が可能です</div>
+        </div>
+        
+        <script>
+        (function() {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#fbbf24', '#f59e0b', '#ec4899', '#f472b6', '#8b5cf6', '#a78bfa'];
+            const shapes = ['■', '●', '▲', '★', '♦'];
+            
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 3) + 's';
+                confetti.innerHTML = shapes[Math.floor(Math.random() * shapes.length)];
+                confetti.style.fontSize = (Math.random() * 15 + 8) + 'px';
+                confetti.style.color = colors[Math.floor(Math.random() * colors.length)];
+                container.appendChild(confetti);
+            }
+            
+            // Remove confetti after animation
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 6000);
+        })();
+        </script>
+        """
+        
+        st.components.v1.html(success_animation, height=350)
     else:
         # 不足商品アリ
         st.error("⚠️ 不足商品アリ")
