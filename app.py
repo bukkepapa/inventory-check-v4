@@ -130,10 +130,10 @@ def apply_custom_style():
             box-shadow: var(--shadow-sm) !important;
         }
 
-        /* Hide Streamlit elements */
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        /* Hide Streamlit elements - REMOVED to show Deploy button */
+        /* #MainMenu {visibility: hidden;} */
+        /* footer {visibility: hidden;} */
+        /* header {visibility: hidden;} */
         </style>
     """, unsafe_allow_html=True)
 
