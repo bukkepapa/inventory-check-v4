@@ -2,7 +2,7 @@
 streamlit==1.41.0
 pandas==2.2.0
 numpy==1.26.4
-PyMuPDF==1.23.26
+pymupdf
 paddleocr>=2.7.0.3
 paddlepaddle==2.6.0
 opencv-python-headless==4.9.0.80
@@ -12,3 +12,4 @@ altair<5
 requests
 typing_extensions
 protobuf==3.20.2
+setuptools
