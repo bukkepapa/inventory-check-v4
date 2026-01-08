@@ -1,9 +1,9 @@
-﻿# Streamlit Cloud Cache Buster: 2026-01-06-01
+﻿# Streamlit Cloud Cache Buster: 2026-01-08-01
 streamlit==1.41.0
 pandas==2.2.0
 numpy==1.26.4
-pymupdf
-paddleocr>=3.3.2
+PyMuPDF>=1.22.5
+paddleocr>=2.7.0
 paddlepaddle>=2.6.0
 opencv-python-headless==4.9.0.80
 Pillow>=10.2.0
