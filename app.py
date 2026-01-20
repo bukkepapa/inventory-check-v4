@@ -153,13 +153,19 @@ def load_inventory_file(file):
     try:
         file_ext = file.name.split('.')[-1].lower()
         if file_ext == 'csv':
-            df = pd.read_csv(file, header=None, usecols=[1, 8, 10, 13, 22], encoding='cp932')
-            df.columns = ['保管場所', '商品コード', '入数', '倉庫在庫数', '入庫予定']
+            df = pd.read_csv(file, header=None, usecols=[1, 4, 8, 10, 13, 22], encoding='cp932')
+            df.columns = ['保管場所', 'ロケーション', '商品コード', '入数', '倉庫在庫数', '入庫予定']
             df = df[df['保管場所'] == 'A309001']
+            # ロケーションが9で始まる不良在庫を除外
+            df['ロケーション'] = df['ロケーション'].astype(str)
+            df = df[~df['ロケーション'].str.startswith('9')]
         elif file_ext in ['xlsx', 'xls']:
-            df = pd.read_excel(file, header=None, usecols=[1, 8, 10, 13, 22])
-            df.columns = ['保管場所', '商品コード', '入数', '倉庫在庫数', '入庫予定']
+            df = pd.read_excel(file, header=None, usecols=[1, 4, 8, 10, 13, 22])
+            df.columns = ['保管場所', 'ロケーション', '商品コード', '入数', '倉庫在庫数', '入庫予定']
             df = df[df['保管場所'] == 'A309001']
+            # ロケーションが9で始まる不良在庫を除外
+            df['ロケーション'] = df['ロケーション'].astype(str)
+            df = df[~df['ロケーション'].str.startswith('9')]
         else:
             raise ValueError(f"サポートされていないファイル形式です: {file_ext}")
         
@@ -556,9 +562,10 @@ def main():
         
         ### 🛠️ 自動処理プロセス
         1. **入庫予定加算**: `倉庫在庫数 + (入庫予定 × 入数)` で実質在庫を算出
-        2. **特定商品除外**: 商品コード `30126` を自動的に除外
-        3. **正規化**: 商品コードの先頭ゼロを自動削除し、突合精度を向上
-        4. **一括集計**: 複数アップロードされた受注ファイル内の同一商品を自動で合算
+        2. **不良在庫除外**: ロケーション（E列）が `9` で始まる在庫を引当対象から除外
+        3. **特定商品除外**: 商品コード `30126` を自動的に除外
+        4. **正規化**: 商品コードの先頭ゼロを自動削除し、突合精度を向上
+        5. **一括集計**: 複数アップロードされた受注ファイル内の同一商品を自動で合算
         """)
 
 if __name__ == "__main__":
