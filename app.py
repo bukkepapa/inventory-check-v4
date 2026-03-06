@@ -318,7 +318,8 @@ def process_pdf_order(file):
                         '商品コード': p_code.lstrip('0'),
                         '商品名漢字': "PDF抽出商品",
                         '商品名カナ': "",
-                        '発注数量': qty
+                        '発注数量': qty,
+                        'チェーン店固有エリア': ""
                     })
         
         doc.close()
@@ -342,7 +343,7 @@ def load_order_file(file):
                 encoding=encoding,
                 sep='\t',
                 header=0,
-                usecols=[14, 15, 38, 97, 106, 108, 118]
+                usecols=[14, 15, 38, 97, 106, 108, 118, 143]
             )
             break
         except UnicodeDecodeError as e:
@@ -355,7 +356,7 @@ def load_order_file(file):
         raise Exception(f"受注ファイルの文字コードエラー: 対応しているエンコーディングでの読み込みに失敗しました。")
     
     try:
-        df.columns = ['顧客コード', '顧客名', '伝票番号', '商品コード', '商品名漢字', '商品名カナ', '発注数量']
+        df.columns = ['顧客コード', '顧客名', '伝票番号', '商品コード', '商品名漢字', '商品名カナ', '発注数量', 'チェーン店固有エリア']
         df['発注数量'] = pd.to_numeric(df['発注数量'], errors='coerce').fillna(0).astype(int)
         df = df.dropna(subset=['商品コード'])
         df['商品コード'] = df['商品コード'].astype(str).str.lstrip('0')
@@ -430,26 +431,33 @@ def display_results(allocation_df, order_df):
         st.markdown('<div class="section-title">⚠️ 不足商品リスト</div>', unsafe_allow_html=True)
         
         shortage_df['不足数'] = shortage_df['引当後在庫'].abs()
-        customer_info = []
+        
+        # 伝票番号ごとに1行で展開
+        slip_rows = []
         for _, row in shortage_df.iterrows():
             product_code = row['商品コード']
-            order_details = order_df[order_df['商品コード'] == product_code][['顧客コード', '顧客名', '伝票番号']].drop_duplicates()
-            customer_codes = ', '.join(order_details['顧客コード'].astype(str).tolist())
-            customer_names = ', '.join(order_details['顧客名'].astype(str).tolist())
-            slip_numbers = ', '.join(order_details['伝票番号'].astype(str).tolist()) if '伝票番号' in order_df.columns else ''
-            
-            customer_info.append({
-                '商品コード': product_code,
-                '商品名': row['商品名'],
-                '倉庫在庫': row['倉庫在庫数'],
-                '受注合計': row['受注合計数'],
-                '不足数': row['不足数'],
-                '伝票番号': slip_numbers,
-                '該当顧客コード': customer_codes,
-                '該当顧客名': customer_names
-            })
+            order_details = order_df[order_df['商品コード'] == product_code][['顧客名', '伝票番号', 'チェーン店固有エリア']].drop_duplicates(subset=['伝票番号'])
+            for _, detail in order_details.iterrows():
+                slip_rows.append({
+                    '商品コード': product_code,
+                    '商品名': str(detail.get('チェーン店固有エリア', '')),
+                    '倉庫在庫': row['倉庫在庫数'],
+                    '受注合計': row['受注合計数'],
+                    '不足数': row['不足数'],
+                    '伝票番号': str(detail['伝票番号']),
+                    '該当顧客名': str(detail['顧客名'])
+                })
         
-        result_df = pd.DataFrame(customer_info)
+        result_df = pd.DataFrame(slip_rows)
+        if not result_df.empty:
+            # 伝票番号の昇順ソート
+            result_df = result_df.sort_values('伝票番号', ascending=True).reset_index(drop=True)
+            
+            # 伝票番号の重複チェック（異なる商品で同一伝票番号が存在する場合）
+            slip_counts = result_df['伝票番号'].value_counts()
+            dup_slips = slip_counts[slip_counts > 1].index
+            result_df['重複'] = result_df['伝票番号'].apply(lambda x: '★' if x in dup_slips else '')
+        
         st.dataframe(result_df, use_container_width=True)
 
     # 特殊アイテム（0019005）の表示
